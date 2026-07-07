@@ -347,29 +347,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       padding: 8px 14px; border-radius: 999px; cursor: pointer; transition: .15s;
     }
     .mm-back:hover { border-color: var(--accent); color: var(--accent); }
-    .mm-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .mm-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; perspective: 1500px; perspective-origin: 50% 42%; }
     .mm-stage { animation: mmpop .5s cubic-bezier(.22,.9,.28,1) both; transform-origin: 410px 370px; }
     .mm-stage.mm-out { animation: mmout .22s ease forwards; }
     @keyframes mmpop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
     @keyframes mmout { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1.04); } }
     .mm-link { transition: opacity .3s ease; }
-    .mm-rect3 { fill: var(--surface-2); stroke-width: 2; }
+    .mm-rect3 { fill: url(#mmNodeG); stroke-width: 2; }
     .mm-rect3.up { stroke: var(--up); } .mm-rect3.down { stroke: var(--down); }
     .mm-name { fill: var(--ink-soft); font-size: 9px; font-weight: 600; text-anchor: middle; }
-    .mm-svg { width: 100%; min-width: 600px; max-width: 820px; height: auto; display: block; margin: 0 auto; }
+    .mm-svg { width: 100%; min-width: 600px; max-width: 820px; height: auto; display: block; margin: 0 auto;
+              transform: rotateX(18deg); transform-style: preserve-3d; transition: transform .3s ease; will-change: transform; }
     .mm-svg text { font-family: var(--font); }
     .mm-link { stroke: var(--line); stroke-width: 1.5; }
-    .mm-node { cursor: pointer; }
-    .mm-node:hover .mm-rect, .mm-node:hover .mm-rect2 { filter: brightness(1.35); }
-    .mm-rect  { fill: var(--surface-2); stroke-width: 2; }
-    .mm-rect2 { fill: var(--surface-2); stroke-width: 1.5; }
+    .mm-node { cursor: pointer; filter: url(#mmShadow); }
+    .mm-node:hover .mm-rect, .mm-node:hover .mm-rect2, .mm-node:hover .mm-rect3 { filter: brightness(1.35); }
+    .mm-rect  { fill: url(#mmNodeG); stroke-width: 2; }
+    .mm-rect2 { fill: url(#mmNodeG); stroke-width: 1.5; }
     .mm-rect.up,  .mm-rect2.up   { stroke: var(--up); }
     .mm-rect.down, .mm-rect2.down { stroke: var(--down); }
     .mm-t  { fill: #fff; font-size: 13px; font-weight: 800; text-anchor: middle; }
     .mm-t2 { fill: #fff; font-size: 11px; font-weight: 800; text-anchor: middle; }
     .mm-sub { font-size: 10px; font-weight: 700; text-anchor: middle; }
     .mm-sub.up { fill: var(--up); } .mm-sub.down { fill: var(--down); }
-    .mm-center { fill: url(#mmGrad); }
+    .mm-center { fill: url(#mmCenterG); }
     .mm-center-t { fill: #fff; font-size: 15px; font-weight: 800; text-anchor: middle; }
     .mm-hint { text-align: center; color: var(--ink-soft); font-size: 0.85rem; margin-top: 12px; }
     .mm-hint b { color: var(--ink); }
@@ -1406,9 +1407,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const MM_CX = 410, MM_CY = 370;
     let mmState = { mode: 'root' };
 
-    const mmDefs = `<defs><linearGradient id="mmGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ff4d4d"/><stop offset="100%" stop-color="#b81414"/>
-    </linearGradient></defs>`;
+    const mmDefs = `<defs>
+      <radialGradient id="mmCenterG" cx="34%" cy="28%" r="88%">
+        <stop offset="0%" stop-color="#ff8f8f"/><stop offset="50%" stop-color="#ff2f2f"/><stop offset="100%" stop-color="#9c0d0d"/>
+      </radialGradient>
+      <linearGradient id="mmNodeG" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#2c3648"/><stop offset="100%" stop-color="#141a24"/>
+      </linearGradient>
+      <filter id="mmShadow" x="-60%" y="-60%" width="220%" height="220%">
+        <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity="0.6"/>
+      </filter>
+    </defs>`;
 
     const mmLine = (x1,y1,x2,y2) => `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" class="mm-link"/>`;
 
@@ -1519,6 +1528,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       if (node.dataset.ticker) openSector(node.dataset.sector, node.dataset.ticker);
     });
     mmBack.addEventListener('click', () => mmTransition({ mode: 'root' }));
+
+    // 마우스 움직임에 따라 장면을 기울여 입체(3D) 느낌을 준다
+    const mmWrap = mmSvg.closest('.mm-wrap');
+    const MM_TILT = 18;   // 기본 기울기(도)
+    if (mmWrap) {
+      mmWrap.addEventListener('mousemove', (e) => {
+        const r = mmWrap.getBoundingClientRect();
+        const nx = (e.clientX - r.left) / r.width - 0.5;   // -0.5 ~ 0.5
+        const ny = (e.clientY - r.top) / r.height - 0.5;
+        const rx = (MM_TILT - ny * 16).toFixed(1);          // 위/아래로 기울기
+        const ry = (nx * 14).toFixed(1);                    // 좌/우로 회전
+        mmSvg.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+      });
+      mmWrap.addEventListener('mouseleave', () => { mmSvg.style.transform = `rotateX(${MM_TILT}deg)`; });
+    }
 
     /* ============ 종목 상세 모달 (실시간 시세 + 실제 뉴스) ============ */
     const detailModal = document.getElementById('detailModal');
