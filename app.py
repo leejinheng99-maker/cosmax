@@ -357,22 +357,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .mm-rect3.up { stroke: var(--up); } .mm-rect3.down { stroke: var(--down); }
     .mm-name { fill: var(--ink-soft); font-size: 9px; font-weight: 600; text-anchor: middle; }
     .mm-svg { width: 100%; min-width: 600px; max-width: 820px; height: auto; display: block; margin: 0 auto;
-              transform-style: preserve-3d; transition: transform .4s ease; will-change: transform;
-              animation: mmSway 14s ease-in-out infinite; }
-    /* 마우스가 없을 때 전체 장면이 3D로 천천히 흔들리며 떠다닌다 */
-    @keyframes mmSway {
-      0%, 100% { transform: rotateX(15deg) rotateY(-9deg); }
-      50%      { transform: rotateX(22deg) rotateY(9deg); }
-    }
+              transform: rotateX(18deg); transform-style: preserve-3d; transition: transform .3s ease; will-change: transform; }
     .mm-svg text { font-family: var(--font); }
     .mm-link { stroke: var(--line); stroke-width: 1.5; }
-    .mm-node { cursor: pointer; filter: url(#mmShadow); animation: mmFloat 6s ease-in-out infinite; }
-    /* 각 노드가 서로 다른 타이밍으로 둥둥 떠다닌다 (delay/duration은 인라인으로 랜덤 지정) */
-    @keyframes mmFloat {
-      0%, 100% { transform: translate(0px, 0px); }
-      33%      { transform: translate(3px, -6px); }
-      66%      { transform: translate(-3px, -3px); }
-    }
+    .mm-node { cursor: pointer; filter: url(#mmShadow); }
     .mm-node:hover .mm-rect, .mm-node:hover .mm-rect2, .mm-node:hover .mm-rect3 { filter: brightness(1.35); }
     .mm-rect  { fill: url(#mmNodeG); stroke-width: 2; }
     .mm-rect2 { fill: url(#mmNodeG); stroke-width: 1.5; }
@@ -1435,11 +1423,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     const mmPct = v => v == null ? '…' : ((v >= 0 ? '+' : '') + v.toFixed(2) + '%');
     const mmDir = v => v == null ? '' : (v >= 0 ? 'up' : 'down');
-    // 각 노드가 서로 다른 위상/속도로 둥둥 떠다니도록 랜덤 delay/duration
-    const mmFloatStyle = () => `animation-delay:-${(Math.random()*6).toFixed(2)}s;animation-duration:${(5.5+Math.random()*3.5).toFixed(2)}s`;
     function mmSectorPill(x, y, name, pct, attrs) {
       const w = 100, h = 40;
-      return `<g class="mm-node" ${attrs} style="${mmFloatStyle()}">
+      return `<g class="mm-node" ${attrs}>
         <rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" rx="12" class="mm-rect ${mmDir(pct)}"/>
         <text x="${x.toFixed(1)}" y="${(y-3).toFixed(1)}" class="mm-t">${name}</text>
         <text x="${x.toFixed(1)}" y="${(y+12).toFixed(1)}" class="mm-sub ${mmDir(pct)}">${mmPct(pct)}</text>
@@ -1447,14 +1433,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
     function mmSmallStock(x, y, st, sector) {
       const w = 58, h = 26;
-      return `<g class="mm-node" data-sector="${sector}" data-ticker="${st.t}" style="${mmFloatStyle()}">
+      return `<g class="mm-node" data-sector="${sector}" data-ticker="${st.t}">
         <rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" rx="9" class="mm-rect2 ${mmDir(st.chg)}"/>
         <text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" class="mm-t2">${st.t}</text>
       </g>`;
     }
     function mmBigStock(x, y, st, sector) {
       const w = 122, h = 56;
-      return `<g class="mm-node" data-sector="${sector}" data-ticker="${st.t}" style="${mmFloatStyle()}">
+      return `<g class="mm-node" data-sector="${sector}" data-ticker="${st.t}">
         <rect x="${(x-w/2).toFixed(1)}" y="${(y-h/2).toFixed(1)}" width="${w}" height="${h}" rx="13" class="mm-rect3 ${mmDir(st.chg)}"/>
         <text x="${x.toFixed(1)}" y="${(y-9).toFixed(1)}" class="mm-t2" style="font-size:13px">${st.t}</text>
         <text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" class="mm-name">${st.n}</text>
@@ -1466,7 +1452,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const label = isRoot ? '🇺🇸 미국 주식' : name;
       const ly = isRoot ? MM_CY + 5 : MM_CY - 6;
       const sub = isRoot ? '' : `<text x="${MM_CX}" y="${MM_CY+16}" class="mm-sub ${mmDir(pct)}">${mmPct(pct)}</text>`;
-      return `<g class="mm-node" ${attrs} style="${mmFloatStyle()}">
+      return `<g class="mm-node" ${attrs}>
         <rect x="${MM_CX-w/2}" y="${MM_CY-h/2}" width="${w}" height="${h}" rx="16" class="mm-center"/>
         <text x="${MM_CX}" y="${ly}" class="mm-center-t">${label}</text>${sub}
       </g>`;
@@ -1543,23 +1529,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     });
     mmBack.addEventListener('click', () => mmTransition({ mode: 'root' }));
 
-    // 마우스를 올리면 사용자가 3D 기울기를 조종하고(자동 스웨이 일시정지),
-    // 마우스를 떼면 다시 자동으로 흔들리며 떠다닌다.
+    // 마우스 움직임에 따라 장면을 기울여 입체(3D) 느낌을 준다
     const mmWrap = mmSvg.closest('.mm-wrap');
+    const MM_TILT = 18;   // 기본 기울기(도)
     if (mmWrap) {
       mmWrap.addEventListener('mousemove', (e) => {
         const r = mmWrap.getBoundingClientRect();
         const nx = (e.clientX - r.left) / r.width - 0.5;   // -0.5 ~ 0.5
         const ny = (e.clientY - r.top) / r.height - 0.5;
-        const rx = (18 - ny * 18).toFixed(1);               // 위/아래로 기울기
-        const ry = (nx * 18).toFixed(1);                    // 좌/우로 회전
-        mmSvg.style.animation = 'none';                     // 자동 스웨이 정지
+        const rx = (MM_TILT - ny * 16).toFixed(1);          // 위/아래로 기울기
+        const ry = (nx * 14).toFixed(1);                    // 좌/우로 회전
         mmSvg.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
       });
-      mmWrap.addEventListener('mouseleave', () => {
-        mmSvg.style.transform = '';                         // 인라인 제거 → CSS 애니메이션 복귀
-        mmSvg.style.animation = '';
-      });
+      mmWrap.addEventListener('mouseleave', () => { mmSvg.style.transform = `rotateX(${MM_TILT}deg)`; });
     }
 
     /* ============ 종목 상세 모달 (실시간 시세 + 실제 뉴스) ============ */
