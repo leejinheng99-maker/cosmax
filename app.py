@@ -376,7 +376,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .mm-hint b { color: var(--ink); }
 
     /* ============ 애널리스트 리포트 ============ */
-    .journals { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .journals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
     .journal { padding: 20px; display: flex; flex-direction: column; gap: 12px; transition: transform .18s, border-color .18s; }
     .journal:hover { transform: translateY(-3px); border-color: rgba(239,62,62,0.4); }
     .j-top { display: flex; align-items: center; gap: 12px; }
@@ -588,6 +588,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       .nav-links { display: none; }
       .bar-row { grid-template-columns: 88px 1fr 54px; gap: 8px; }
       .bar-row .label { font-size: 0.82rem; }
+    }
+    /* 애널리스트 카드는 항상 한 줄에 2개. 아주 좁은 화면(폰)에서만 1개 */
+    @media (max-width: 380px) {
       .journals { grid-template-columns: 1fr; }
     }
   </style>
@@ -1834,7 +1837,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     function refreshAll() { refreshIndex(); refreshSectors(); refreshPicks(); refreshNews(); }
 
     // 애널리스트 투자의견 — 실제 Yahoo Finance 페이지로 연결 (지어낸 목표주가 없음)
-    // [티커, 한글명, 섹터, 로고 도메인] — 로고는 clearbit에서 가져오고 실패 시 티커 배지로 폴백
+    // [티커, 한글명, 섹터, 로고 도메인] — 로고는 FMP(티커 기준)에서 가져오고 실패 시 티커 배지로 폴백
     const JOURNALS = [
       ['NVDA','엔비디아','반도체·AI','nvidia.com'], ['MSFT','마이크로소프트','소프트웨어·클라우드','microsoft.com'],
       ['GOOGL','알파벳','빅테크','google.com'], ['COIN','코인베이스','가상자산','coinbase.com'],
@@ -1843,7 +1846,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     const journalsEl = document.getElementById('journals');
     if (journalsEl) journalsEl.innerHTML = JOURNALS.map(([t, n, s, dom]) => `
       <a class="card journal" href="https://finance.yahoo.com/quote/${t}/analysis" target="_blank" rel="noopener noreferrer">
-        <div class="j-top"><span class="j-ava"><img src="https://logo.clearbit.com/${dom}" alt="${n} 로고" loading="lazy" onerror="const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
+        <div class="j-top"><span class="j-ava"><img src="https://financialmodelingprep.com/image-stock/${t}.png" alt="${n} 로고" loading="lazy" onerror="const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
         <p>월가 애널리스트들의 <b>실제</b> 투자의견·목표주가·실적 추정치를 확인하세요.</p>
         <span class="j-link">투자의견·목표주가 보기 ↗</span>
       </a>`).join('');
