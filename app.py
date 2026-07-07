@@ -382,8 +382,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .j-ava {
       width: 46px; height: 46px; border-radius: 50%; flex: none; font-size: 0.8rem;
       display: grid; place-items: center; font-weight: 800; color: #fff;
-      background: linear-gradient(135deg, var(--accent), #8f1010);
+      background: #fff; overflow: hidden; border: 1px solid var(--line);
     }
+    .j-ava img { width: 100%; height: 100%; object-fit: contain; padding: 7px; display: block; }
+    /* 로고 로드 실패 시: 기존 티커 배지(빨간 그라데이션)로 폴백 */
+    .j-ava.noimg { background: linear-gradient(135deg, var(--accent), #8f1010); border: none; }
     .j-who { flex: 1; min-width: 0; }
     .j-who b { font-size: 0.98rem; font-weight: 800; display: block; letter-spacing: -0.01em; }
     .j-who small { color: var(--ink-soft); font-size: 0.8rem; }
@@ -569,7 +572,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     /* ============ 모바일 ============ */
     @media (max-width: 820px) {
       .picks { grid-template-columns: 1fr; }
-      .journals { grid-template-columns: 1fr; }
+      /* 애널리스트 카드는 한 줄에 2개 유지 (한 눈에 보기) */
       .index-strip { grid-template-columns: repeat(2, 1fr); }
       /* 달력: 가로 스크롤로 5일 유지 */
       .calendar {
@@ -584,6 +587,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       .nav-links { display: none; }
       .bar-row { grid-template-columns: 88px 1fr 54px; gap: 8px; }
       .bar-row .label { font-size: 0.82rem; }
+      .journals { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -1806,15 +1810,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     function refreshAll() { refreshIndex(); refreshSectors(); refreshPicks(); refreshNews(); }
 
     // 애널리스트 투자의견 — 실제 Yahoo Finance 페이지로 연결 (지어낸 목표주가 없음)
+    // [티커, 한글명, 섹터, 로고 도메인] — 로고는 clearbit에서 가져오고 실패 시 티커 배지로 폴백
     const JOURNALS = [
-      ['NVDA','엔비디아','반도체·AI'], ['MSFT','마이크로소프트','소프트웨어·클라우드'],
-      ['GOOGL','알파벳','빅테크'], ['COIN','코인베이스','가상자산'],
-      ['CEG','컨스텔레이션','원전·에너지'], ['TSLA','테슬라','전기차'],
+      ['NVDA','엔비디아','반도체·AI','nvidia.com'], ['MSFT','마이크로소프트','소프트웨어·클라우드','microsoft.com'],
+      ['GOOGL','알파벳','빅테크','google.com'], ['COIN','코인베이스','가상자산','coinbase.com'],
+      ['CEG','컨스텔레이션','원전·에너지','constellationenergy.com'], ['TSLA','테슬라','전기차','tesla.com'],
     ];
     const journalsEl = document.getElementById('journals');
-    if (journalsEl) journalsEl.innerHTML = JOURNALS.map(([t, n, s]) => `
+    if (journalsEl) journalsEl.innerHTML = JOURNALS.map(([t, n, s, dom]) => `
       <a class="card journal" href="https://finance.yahoo.com/quote/${t}/analysis" target="_blank" rel="noopener noreferrer">
-        <div class="j-top"><span class="j-ava">${t}</span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
+        <div class="j-top"><span class="j-ava"><img src="https://logo.clearbit.com/${dom}" alt="${n} 로고" loading="lazy" onerror="const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
         <p>월가 애널리스트들의 <b>실제</b> 투자의견·목표주가·실적 추정치를 확인하세요.</p>
         <span class="j-link">투자의견·목표주가 보기 ↗</span>
       </a>`).join('');
