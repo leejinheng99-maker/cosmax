@@ -1,5 +1,4 @@
 import streamlit as st
-import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="10만원으로 내집마련 — 미국 주식 주간 리포트",
@@ -1827,5 +1826,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 """
 
 # 페이지가 길고(스크롤 필요) 내부에 모달/차트 등 동적 요소가 있으므로
-# 넉넉한 높이 + 자체 스크롤 허용
-components.html(HTML_CONTENT, height=6000, scrolling=True)
+# 넉넉한 높이로 iframe 렌더링 (st.iframe은 내부적으로 스크롤 허용)
+# HTML 문자열을 src로 넘기면 raw HTML로 iframe 안에 렌더링됩니다.
+st.iframe(HTML_CONTENT, height=6000)
