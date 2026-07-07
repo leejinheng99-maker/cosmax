@@ -782,7 +782,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <span class="sub">각 종목의 <b>실제</b> 월가 투자의견·목표주가 페이지로 연결돼요 (Yahoo Finance)</span>
       </div>
 
-      <div class="journals" id="journals"><!-- 실제 링크 카드로 채워집니다 --></div>
+      <div class="journals" id="journalsGrid"><!-- 실제 링크 카드로 채워집니다 --></div>
     </div>
   </section>
 
@@ -1843,10 +1843,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       ['GOOGL','알파벳','빅테크','google.com'], ['COIN','코인베이스','가상자산','coinbase.com'],
       ['CEG','컨스텔레이션','원전·에너지','constellationenergy.com'], ['TSLA','테슬라','전기차','tesla.com'],
     ];
-    const journalsEl = document.getElementById('journals');
+    const journalsEl = document.getElementById('journalsGrid');
     if (journalsEl) journalsEl.innerHTML = JOURNALS.map(([t, n, s, dom]) => `
       <a class="card journal" href="https://finance.yahoo.com/quote/${t}/analysis" target="_blank" rel="noopener noreferrer">
-        <div class="j-top"><span class="j-ava"><img src="https://financialmodelingprep.com/image-stock/${t}.png" alt="${n} 로고" loading="lazy" onerror="const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
+        <div class="j-top"><span class="j-ava"><img src="https://assets.parqet.com/logos/symbol/${t}" alt="${n} 로고" loading="lazy" data-fb="https://financialmodelingprep.com/image-stock/${t}.png" onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';}"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
         <p>월가 애널리스트들의 <b>실제</b> 투자의견·목표주가·실적 추정치를 확인하세요.</p>
         <span class="j-link">투자의견·목표주가 보기 ↗</span>
       </a>`).join('');
