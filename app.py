@@ -137,16 +137,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .idx:hover .idx-hint { opacity: 1; transform: none; color: var(--accent); }
 
     /* ============ 차트 모달 ============ */
+    /* iframe이 매우 길어(6000px) position:fixed는 화면 밖에 뜬다.
+       backdrop는 문서 전체를 덮고, 패널은 클릭한 위치 근처(JS로 top 지정)에 띄운다. */
     .modal {
-      position: fixed; inset: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: center; padding: 20px;
+      position: absolute; inset: 0; z-index: 100;
       background: rgba(6, 8, 12, 0.72); backdrop-filter: blur(6px);
       opacity: 0; pointer-events: none; transition: opacity .22s ease;
     }
     .modal.open { opacity: 1; pointer-events: auto; }
     .modal-panel {
-      position: relative;
-      width: 100%; max-width: 780px; background: var(--surface);
+      position: absolute; left: 16px; right: 16px; margin: 0 auto; top: 40px;
+      max-width: 780px; background: var(--surface);
       border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow);
       padding: 24px; transform: translateY(16px) scale(.98); transition: transform .22s ease;
     }
@@ -1296,6 +1297,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <text x="${W/2}" y="${midY+72}" text-anchor="middle" fill="var(--ink-soft)" font-size="12">전일종가 ${money(q.pc)} · 당일 실시간 (Finnhub)</text>`;
     }
 
+    // 모달을 클릭 위치 근처에 띄운다. (iframe이 6000px라 position:fixed가
+    // 화면 밖 맨 위에 뜨는 문제 → 마지막 클릭 Y 기준으로 패널 top 지정)
+    let modalLastClickY = 0;
+    document.addEventListener('click', (e) => { modalLastClickY = e.clientY; }, true);
+    function anchorModal(modal) {
+      const panel = modal.querySelector('.modal-panel');
+      if (panel) panel.style.top = Math.max(16, modalLastClickY - 80) + 'px';
+    }
+
     const idxModal = document.getElementById('idxModal');
     async function openIdx(symbol, label) {
       const p = INDEX_PROXIES.find(x => x.sym === symbol);
@@ -1305,6 +1315,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('mChg').className = 'chg-tag';
       document.getElementById('mChart').innerHTML = '';
       const mr = document.getElementById('mRange'); if (mr) mr.style.display = 'none';
+      anchorModal(idxModal);
       idxModal.classList.add('open');
       document.body.style.overflow = 'hidden';
       const svg = document.getElementById('mChart');
@@ -1374,6 +1385,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       renderSecStockList(d);
       const first = ticker ? (d.stocks.find(s => s.t === ticker) || d.stocks[0]) : d.stocks[0];
       drawStock(first);
+      anchorModal(secModal);
       secModal.classList.add('open');
       document.body.style.overflow = 'hidden';
 
@@ -1560,6 +1572,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('dChg').textContent = ''; document.getElementById('dChg').className = 'chg-tag';
       document.getElementById('dChart').innerHTML = '';
       document.getElementById('dArticles').innerHTML = '';
+      anchorModal(detailModal);
       detailModal.classList.add('open');
       document.body.style.overflow = 'hidden';
       if (!FH_KEY) { document.getElementById('dArticles').innerHTML = keyNeeded('실시간 시세·뉴스'); return; }
@@ -1766,6 +1779,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       renderGuStats(avg, false);
       renderGuDongs(g.n, avg);
       document.getElementById('guCount').innerHTML = '네이버 부동산에서 실제 시세 확인 중… (예시값 표시 중)';
+      anchorModal(guModal);
       guModal.classList.add('open');
       document.body.style.overflow = 'hidden';
       // 네이버 실제 시세 시도 (성공 시 교체, 실패 시 예시 유지)
