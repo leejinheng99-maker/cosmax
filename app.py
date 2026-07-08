@@ -137,17 +137,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .idx:hover .idx-hint { opacity: 1; transform: none; color: var(--accent); }
 
     /* ============ 차트 모달 ============ */
-    /* iframe이 매우 길어(6000px) position:fixed는 화면 밖에 뜬다.
-       backdrop는 문서 전체를 덮고, 패널은 클릭한 위치 근처(JS로 top 지정)에 띄운다. */
+    /* iframe이 자체 스크롤되므로 position:fixed가 보이는 창 중앙에 정확히 뜬다. */
     .modal {
-      position: absolute; inset: 0; z-index: 100;
+      position: fixed; inset: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
       background: rgba(6, 8, 12, 0.72); backdrop-filter: blur(6px);
       opacity: 0; pointer-events: none; transition: opacity .22s ease;
     }
     .modal.open { opacity: 1; pointer-events: auto; }
     .modal-panel {
-      position: absolute; left: 16px; right: 16px; margin: 0 auto; top: 40px;
-      max-width: 780px; background: var(--surface);
+      position: relative;
+      width: 100%; max-width: 780px; max-height: 88vh; overflow-y: auto; background: var(--surface);
       border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow);
       padding: 24px; transform: translateY(16px) scale(.98); transition: transform .22s ease;
     }
@@ -1297,14 +1297,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <text x="${W/2}" y="${midY+72}" text-anchor="middle" fill="var(--ink-soft)" font-size="12">전일종가 ${money(q.pc)} · 당일 실시간 (Finnhub)</text>`;
     }
 
-    // 모달을 클릭 위치 근처에 띄운다. (iframe이 6000px라 position:fixed가
-    // 화면 밖 맨 위에 뜨는 문제 → 마지막 클릭 Y 기준으로 패널 top 지정)
-    let modalLastClickY = 0;
-    document.addEventListener('click', (e) => { modalLastClickY = e.clientY; }, true);
-    function anchorModal(modal) {
-      const panel = modal.querySelector('.modal-panel');
-      if (panel) panel.style.top = Math.max(16, modalLastClickY - 80) + 'px';
-    }
+    // iframe이 자체 스크롤되므로 position:fixed 모달이 보이는 창 중앙에 뜬다.
+    // (별도 위치 계산 불필요 — 호출부 호환을 위해 no-op 유지)
+    function anchorModal() {}
 
     const idxModal = document.getElementById('idxModal');
     async function openIdx(symbol, label) {
@@ -1868,9 +1863,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     refreshAll();
 
     /* ============ 상단/하단 퀵메뉴 앵커 이동 ============ */
-    // 이 페이지는 6000px iframe 안에 있고 실제 스크롤은 부모 페이지가 한다.
-    // 앵커(#sectors 등) 기본 동작은 iframe 내부만 스크롤하려다 무시되므로,
-    // 클릭을 가로채 부모 창을 직접 스크롤(같은 출처)하고, 안 되면 scrollIntoView로 폴백한다.
+    // iframe이 자체 스크롤되므로 클릭 시 해당 섹션으로 부드럽게 스크롤한다.
     document.querySelectorAll('a[href^="#"]').forEach(a => {
       a.addEventListener('click', (e) => {
         const id = (a.getAttribute('href') || '').slice(1);
@@ -1878,17 +1871,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const el = document.getElementById(id);
         if (!el) return;
         e.preventDefault();
-        // 1) 부모 창 직접 스크롤 (same-origin iframe)
-        try {
-          const frame = window.frameElement;
-          if (frame && window.parent) {
-            const pY = window.parent.pageYOffset || window.parent.scrollY || 0;
-            const top = frame.getBoundingClientRect().top + pY + el.getBoundingClientRect().top - 10;
-            window.parent.scrollTo({ top, behavior: 'smooth' });
-            return;
-          }
-        } catch (_) { /* cross-origin이면 폴백 */ }
-        // 2) 폴백: 요소를 보이도록 스크롤
         el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     });
@@ -1897,7 +1879,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 </html>
 """
 
-# 페이지가 길고(스크롤 필요) 내부에 모달/차트 등 동적 요소가 있으므로
-# 넉넉한 높이로 iframe 렌더링 (st.iframe은 내부적으로 스크롤 허용)
-# HTML 문자열을 src로 넘기면 raw HTML로 iframe 안에 렌더링됩니다.
-st.iframe(HTML_CONTENT, height=6000)
+# iframe을 "자체 스크롤되는 창"으로 렌더링한다.
+# 이렇게 해야 상단 퀵메뉴 앵커(#sectors 등) 이동과 position:fixed 모달이
+# 교차 출처(cross-origin) 격리와 무관하게 iframe 내부에서 정상 동작한다.
+# height는 보이는 창 높이(px)이며, 내용은 그 안에서 스크롤된다.
+st.iframe(HTML_CONTENT, height=900)
