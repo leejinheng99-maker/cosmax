@@ -1852,10 +1852,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       ['GOOGL','알파벳','빅테크','google.com'], ['COIN','코인베이스','가상자산','coinbase.com'],
       ['CEG','컨스텔레이션','원전·에너지','constellationenergy.com'], ['TSLA','테슬라','전기차','tesla.com'],
     ];
+    // 로고 소스: 기본은 FMP(티커 기준, 이 iframe에서 렌더 확인됨).
+    // FMP가 빈(투명) 이미지를 주는 종목만 도메인 기반 Google 파비콘으로 대체.
+    const FMP_BLANK = { CEG: 'constellationenergy.com' };
+    const logoSrc = (t) => FMP_BLANK[t]
+      ? `https://www.google.com/s2/favicons?domain=${FMP_BLANK[t]}&sz=128`
+      : `https://financialmodelingprep.com/image-stock/${t}.png`;
     const journalsEl = document.getElementById('journalsGrid');
     if (journalsEl) journalsEl.innerHTML = JOURNALS.map(([t, n, s, dom]) => `
       <a class="card journal" href="https://finance.yahoo.com/quote/${t}/analysis" target="_blank" rel="noopener noreferrer">
-        <div class="j-top"><span class="j-ava"><img src="https://assets.parqet.com/logos/symbol/${t}" alt="${n} 로고" loading="lazy" data-fb="https://financialmodelingprep.com/image-stock/${t}.png" onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb');}else{const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';}"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
+        <div class="j-top"><span class="j-ava"><img src="${logoSrc(t)}" alt="${n} 로고" loading="lazy" onerror="const p=this.parentElement;p.classList.add('noimg');p.textContent='${t}';"></span><div class="j-who"><b>${n}</b><small>${s} · ${t}</small></div></div>
         <p>월가 애널리스트들의 <b>실제</b> 투자의견·목표주가·실적 추정치를 확인하세요.</p>
         <span class="j-link">투자의견·목표주가 보기 ↗</span>
       </a>`).join('');
