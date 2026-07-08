@@ -1866,6 +1866,32 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       </a>`).join('');
 
     refreshAll();
+
+    /* ============ 상단/하단 퀵메뉴 앵커 이동 ============ */
+    // 이 페이지는 6000px iframe 안에 있고 실제 스크롤은 부모 페이지가 한다.
+    // 앵커(#sectors 등) 기본 동작은 iframe 내부만 스크롤하려다 무시되므로,
+    // 클릭을 가로채 부모 창을 직접 스크롤(같은 출처)하고, 안 되면 scrollIntoView로 폴백한다.
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = (a.getAttribute('href') || '').slice(1);
+        if (!id) return;                       // 로고의 href="#" 등은 무시
+        const el = document.getElementById(id);
+        if (!el) return;
+        e.preventDefault();
+        // 1) 부모 창 직접 스크롤 (same-origin iframe)
+        try {
+          const frame = window.frameElement;
+          if (frame && window.parent) {
+            const pY = window.parent.pageYOffset || window.parent.scrollY || 0;
+            const top = frame.getBoundingClientRect().top + pY + el.getBoundingClientRect().top - 10;
+            window.parent.scrollTo({ top, behavior: 'smooth' });
+            return;
+          }
+        } catch (_) { /* cross-origin이면 폴백 */ }
+        // 2) 폴백: 요소를 보이도록 스크롤
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
   </script>
 </body>
 </html>
